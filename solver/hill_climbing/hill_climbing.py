@@ -1,3 +1,5 @@
+from math import floor
+from random import random
 from typing import Any, Callable, TypeVar, cast
 from time import time
 from state import State
@@ -19,26 +21,33 @@ def _measure(func: F) -> F:
     return cast(F, wrapped)
 
 
+# Random-restart hill climbing
 class HillClimbingSolver(Solver):
     @_measure
     def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]):
-        # decrement to make heap sort by first come first served
-        decrement = 0
+        heap: list[tuple[int, int, State]] = [
+            (heuristicFunction(initial, self.goal), 0, initial)]
+        state = initial
         visited: set[tuple[int, ...]] = set()
-        heap: list[tuple[int, int, State]] = []
-        Solver._push(heap, heuristicFunction(initial, self.goal),
-                     (decrement := decrement - 1), initial)
-        while len(heap) != 0:
-            _, _, state = Solver._pop(heap)
+        increment = 0
+        while True:
+            # heap.clear()
             if state.matrix == self.goal.matrix:
-                print("found,", len(visited), 'states expanded,',
-                      state.depth, 'depths')
-                # state.print_trace()
-                break
-            for i in Direction:
-                moved = state.move(i)
+                print("found,", state.depth, 'depths')
+                return
+            for direction in Direction:
+                moved = state.move(direction)
                 if moved is None or tuple(moved.matrix) in visited:
                     continue
                 Solver._push(heap, heuristicFunction(
-                    moved, self.goal), (decrement := decrement - 1), moved)
-                Solver._visit(visited, moved.matrix)
+                    moved, self.goal), (increment := increment + 1), moved)
+                visited.add(tuple(moved.matrix))
+            if heap[0][0] < heuristicFunction(state, self.goal):
+                idx = 0
+                for i, v in enumerate(heap):
+                    idx = i
+                    if v[0] != heap[0][0]:
+                        break
+                state = heap[floor(random() * (idx + 1))][2]
+            else:
+                state = heap[floor(random() * len(heap))][2]
