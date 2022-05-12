@@ -28,8 +28,6 @@ class HillClimbingSolver(Solver):
         heap: list[tuple[int, int, State]] = []
         Solver._push(heap, heuristicFunction(initial, self.goal),
                      (decrement := decrement - 1), initial)
-        print(Solver.manhattan(State([1, 2, 3, 4, 5, 6, 7, 8, 0]),
-              State([1, 2, 6, 4, 5, 3, 7, 8, 0])))
         while len(heap) != 0:
             _, _, state = Solver._pop(heap)
             if state.matrix == self.goal.matrix:
