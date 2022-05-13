@@ -1,4 +1,5 @@
-from math import floor
+import heapq
+import math
 from random import random
 from typing import Any, Callable, TypeVar, cast
 from time import time
@@ -22,27 +23,26 @@ def _measure(func: F) -> F:
 
 
 class HillClimbingSolver(Solver):
-    @_measure
-    def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]):
-        state = initial
+    # @_measure
+    def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]) -> State:
+        state: State = initial
         goal = self.goal
-        neighbours: list[tuple[int, int, State]] = []
-        while True:
+        t = 1.0
+        heap: list[tuple[int, int, State]] = []
+        while t > 1e-5:
+            heap.clear()
             for i, direction in enumerate(Direction):
                 moved = state.move(direction)
                 if moved is None:
                     continue
-                cost = heuristicFunction(moved, goal)
-                Solver._push(neighbours, cost, i, moved)
-            if neighbours[0][0] >= heuristicFunction(state, goal):
-                break
-            idx = len(neighbours) - 1
-            for i, v in enumerate(neighbours):
-                if v[0] != neighbours[0][0]:
-                    idx = i
-                    break
-            rand = floor(random() * idx)
-            state = neighbours[rand][2]
-            neighbours.clear()
-        print("local optima,", state.depth, 'depths,',
-              heuristicFunction(state, goal), 'costs')
+                heapq.heappush(
+                    heap, (heuristicFunction(moved, goal), i, moved))
+            item = heap[math.floor(random() * len(heap))]
+            delta = item[0] - heuristicFunction(state, goal)
+            if delta < 0:
+                state = item[2]
+                continue
+            if math.exp(-abs(delta) / t) > random():
+                state = item[2]
+            t *= 0.4
+        return state
