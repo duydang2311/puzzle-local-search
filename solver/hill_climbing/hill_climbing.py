@@ -21,33 +21,28 @@ def _measure(func: F) -> F:
     return cast(F, wrapped)
 
 
-# Random-restart hill climbing
 class HillClimbingSolver(Solver):
     @_measure
     def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]):
-        heap: list[tuple[int, int, State]] = [
-            (heuristicFunction(initial, self.goal), 0, initial)]
         state = initial
-        visited: set[tuple[int, ...]] = set()
-        increment = 0
+        goal = self.goal
+        neighbours: list[tuple[int, int, State]] = []
         while True:
-            # heap.clear()
-            if state.matrix == self.goal.matrix:
-                print("found,", state.depth, 'depths')
-                return
-            for direction in Direction:
+            for i, direction in enumerate(Direction):
                 moved = state.move(direction)
-                if moved is None or tuple(moved.matrix) in visited:
+                if moved is None:
                     continue
-                Solver._push(heap, heuristicFunction(
-                    moved, self.goal), (increment := increment + 1), moved)
-                visited.add(tuple(moved.matrix))
-            if heap[0][0] < heuristicFunction(state, self.goal):
-                idx = 0
-                for i, v in enumerate(heap):
+                cost = heuristicFunction(moved, goal)
+                Solver._push(neighbours, cost, i, moved)
+            if neighbours[0][0] >= heuristicFunction(state, goal):
+                break
+            idx = len(neighbours) - 1
+            for i, v in enumerate(neighbours):
+                if v[0] != neighbours[0][0]:
                     idx = i
-                    if v[0] != heap[0][0]:
-                        break
-                state = heap[floor(random() * (idx + 1))][2]
-            else:
-                state = heap[floor(random() * len(heap))][2]
+                    break
+            rand = floor(random() * idx)
+            state = neighbours[rand][2]
+            neighbours.clear()
+        print("local optima,", state.depth, 'depths,',
+              heuristicFunction(state, goal), 'costs')
