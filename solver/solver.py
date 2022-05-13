@@ -46,5 +46,5 @@ class Solver():
         visitedSet.add(tuple(matrix))
 
     @abc.abstractmethod
-    def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]):
+    def solve(self, initial: State, heuristicFunction: Callable[[State, State], int]) -> State:
         pass
